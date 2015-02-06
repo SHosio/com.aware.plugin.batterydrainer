@@ -17,18 +17,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             "'esm_trigger': 'com.aware.plugin.batterydrainer'" +
             "}}]";
 
-    private final String EMAILJSON = "[{'esm':{" +
-            "'esm_type':" + ESM.TYPE_ESM_TEXT + "," +
-            "'esm_title': 'Register'," +
-            "'esm_instructions': 'Enter your uid below'," +
-            "'esm_submit': 'Register'," +
-            "'esm_expiration_threashold': 60," + //the user has 20 minutes to respond. Set to 0 to disable
-            "'esm_trigger': 'com.aware.plugin.batterydrainer'" +
-            "}}]";
-
-
-
-
     private final String MYTAG = "BATTERYDRAINER";
 
     public AlarmReceiver() {
@@ -37,9 +25,9 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        int q = intent.getIntExtra("qno", -1);
+        String extra = intent.getStringExtra("extra");
         Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
-        String esmJSON = POPUPJSON;
+        String esmJSON = BIDJSON;
         queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
         context.sendBroadcast(queue_esm);
     }
