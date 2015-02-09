@@ -87,7 +87,6 @@ public class Plugin extends Aware_Plugin {
         alarmIntent.putExtra("extra", "getbid");
 
         Calendar cal = Calendar.getInstance();
-        int hourToTrigger = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
 
         int rc = (int) System.currentTimeMillis();
         nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), rc, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -176,12 +175,12 @@ public class Plugin extends Aware_Plugin {
             if (esm_data != null) {
                 esm_data.close();
             }
-            if (trigger.contains("com.aware.plugin.batterydrainer") == false){
+            if (trigger != null && trigger.contains("com.aware.plugin.batterydrainer") == false){
                 Log.d(MYTAG, "Somebody else initiated the ESM, no need to react, returning.");
                 return;
             }
 
-            if(trigger.contains("nobid")){
+            if(trigger != null && trigger.contains("nobid")){
                 //no battery, just schedule next and return
                 setNextGetBidAlarm();
                 return;
