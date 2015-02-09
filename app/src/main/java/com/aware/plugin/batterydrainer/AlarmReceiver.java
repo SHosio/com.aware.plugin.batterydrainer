@@ -2,9 +2,12 @@ package com.aware.plugin.batterydrainer;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.util.Log;
 import android.content.BroadcastReceiver;
+
 import com.aware.ESM;
+import com.aware.providers.Battery_Provider;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
@@ -14,7 +17,16 @@ public class AlarmReceiver extends BroadcastReceiver {
             "'esm_instructions': 'How much should we pay you for 10% (units) of your battery life!'," +
             "'esm_submit': 'Bid!'," +
             "'esm_expiration_threashold': 60," + //the user has 20 minutes to respond. Set to 0 to disable
-            "'esm_trigger': 'com.aware.plugin.batterydrainer'" +
+            "'esm_trigger': 'com.aware.plugin.batterydrainer.getbid'" +
+            "}}]";
+
+    private final String CANNOTBIDJSON = "[{'esm': {" +
+            "'esm_type': 5," +
+            "'esm_title': 'Not enough battery left'," +
+            "'esm_instructions': 'Cannot bid if you don't have at least 10% battery left...'," +
+            "'esm_quick_answers': ['OK, got it!']," +
+            "'esm_expiration_threashold': 60," +
+            "'esm_trigger': 'com.aware.plugin.batterydrainer.nobid'" +
             "}}]";
 
     private final String MYTAG = "BATTERYDRAINER";
@@ -25,10 +37,32 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String extra = intent.getStringExtra("extra");
-        Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
-        String esmJSON = BIDJSON;
-        queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
-        context.sendBroadcast(queue_esm);
+        if (getBatteryLevel(context) < 10) {
+            String extra = intent.getStringExtra("extra");
+            Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
+            String esmJSON = CANNOTBIDJSON;
+            queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
+            context.sendBroadcast(queue_esm);
+        } else {
+            String extra = intent.getStringExtra("extra");
+            Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
+            String esmJSON = BIDJSON;
+            queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
+            context.sendBroadcast(queue_esm);
+        }
+
+    }
+
+    private int getBatteryLevel(Context c) {
+        Cursor batteryData = c.getContentResolver().query(Battery_Provider.Battery_Data.CONTENT_URI, null, null, null, null);
+        String batteryLevel = "-1";
+        if (batteryData != null && batteryData.moveToLast()) {
+            batteryLevel = batteryData.getString(batteryData.getColumnIndex(Battery_Provider.Battery_Data.LEVEL));
+            Log.d(MYTAG, "BATTERY LEFT:" + batteryLevel);
+        }
+        if (batteryData != null) {
+            batteryData.close();
+        }
+        return Integer.parseInt(batteryLevel);
     }
 }

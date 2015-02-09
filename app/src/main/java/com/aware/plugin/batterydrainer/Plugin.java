@@ -11,6 +11,7 @@ import com.aware.Aware_Preferences;
 import com.aware.ESM;
 import com.aware.utils.Aware_Plugin;
 import com.aware.providers.ESM_Provider.*;
+import com.aware.providers.Battery_Provider.*;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -48,9 +49,7 @@ public class Plugin extends Aware_Plugin {
     private AlarmManager alarmManager;
 
     private final int NEXTBIDRC = 123123; //request code for next bid
-    private final int NEXTDIDWINRC = 321321; //request code for next "did i win" check
     private PendingIntent nextBidIntent = null;
-    private PendingIntent nextCheckWinIntent = null;
 
 
 
@@ -58,15 +57,13 @@ public class Plugin extends Aware_Plugin {
     public void onCreate() {
         super.onCreate();
         esm_statuses = new ESMStatusListener();
-        Log.d(MYTAG, "CREATING THE BACK PAIN PLUGIN, ONCREATE()");
-        Toast.makeText(getBaseContext(), "Selkäkipututkimus aloitettu.", Toast.LENGTH_LONG).show();
+        Log.d(MYTAG, "CREATING THE BATTERY DRAINER PLUGIN, ONCREATE()");
 
         Aware.setSetting(getApplicationContext(), Aware_Preferences.STATUS_ESM, true);
         Aware.setSetting(getApplicationContext(), Aware_Preferences.DEBUG_FLAG, true);
 
         //listen to ESM notifications
         IntentFilter esm_filter = new IntentFilter();
-        esm_filter.addAction(ESM.ACTION_AWARE_ESM_QUEUE_COMPLETE);
         esm_filter.addAction(ESM.ACTION_AWARE_ESM_DISMISSED);
         esm_filter.addAction(ESM.ACTION_AWARE_ESM_EXPIRED);
         esm_filter.addAction(ESM.ACTION_AWARE_ESM_ANSWERED);
@@ -74,15 +71,39 @@ public class Plugin extends Aware_Plugin {
 
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
+        getDebugBidNow();
         setNextGetBidAlarm();
+
+        //aware sync? get battery level, if below 10 do not bid
 
     }
 
+    private void flushData() {
+        sendBroadcast(new Intent(Aware.ACTION_AWARE_SYNC_DATA));
+    }
 
-    private void setNextGetBidAlarm() {
+    private void getDebugBidNow(){
+        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
+        alarmIntent.putExtra("extra", "getbid");
+
         Calendar cal = Calendar.getInstance();
-
         int hourToTrigger = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
+
+        int rc = (int) System.currentTimeMillis();
+        nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), rc, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis() + 5000, nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
+        Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
+    }
+
+    public void setNextGetBidAlarm() {
+
+
+        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
+        alarmIntent.putExtra("extra", "getbid");
+
+        Calendar cal = Calendar.getInstance();
+        int hourToTrigger = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
+
 
         if (hourToTrigger <= 9) {
             // Someone signing up for the study before 9am or at e.g. 0930, should not happen in any other condition. Schedule for 0955 today
@@ -90,8 +111,6 @@ public class Plugin extends Aware_Plugin {
             cal.set(Calendar.HOUR_OF_DAY, 9);
             cal.set(Calendar.MINUTE, 55);
             cal.set(Calendar.SECOND, 00);
-            Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-            alarmIntent.putExtra("extra", "getbid");
             nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
             Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
@@ -102,8 +121,6 @@ public class Plugin extends Aware_Plugin {
             cal.set(Calendar.HOUR_OF_DAY, 9);
             cal.set(Calendar.MINUTE, 55);
             cal.set(Calendar.SECOND, 00);
-            Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-            alarmIntent.putExtra("extra", "getbid");
             nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
             Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
@@ -111,12 +128,11 @@ public class Plugin extends Aware_Plugin {
 
         } else {
             // Let's get a bid one hour from now... e.g. if it's 14:55, we'll pop up at 15:55!
+            // Note, also 21:55 it'll schedule it 22:55..but will do nothing as the step above will catch it in one hour from now
             hourToTrigger++;
             cal.set(Calendar.HOUR_OF_DAY, hourToTrigger);
             cal.set(Calendar.MINUTE, 55);
             cal.set(Calendar.SECOND, 00);
-            Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-            alarmIntent.putExtra("extra", "getbid");
             nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
             Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
@@ -133,10 +149,6 @@ public class Plugin extends Aware_Plugin {
 
         if (nextBidIntent != null) {
             alarmManager.cancel(nextBidIntent);
-        }
-
-        if (nextCheckWinIntent != null) {
-            alarmManager.cancel(nextCheckWinIntent);
         }
 
         Aware.setSetting(getApplicationContext(), Aware_Preferences.STATUS_ESM, false);
@@ -164,22 +176,34 @@ public class Plugin extends Aware_Plugin {
             if (esm_data != null) {
                 esm_data.close();
             }
-            if (trigger.equals("com.aware.plugin.batterydrainer") == false){
+            if (trigger.contains("com.aware.plugin.batterydrainer") == false){
                 Log.d(MYTAG, "Somebody else initiated the ESM, no need to react, returning.");
                 return;
             }
 
-            if (ans == null) {
-                Log.d(MYTAG, "ANS was null, returning.");
+            if(trigger.contains("nobid")){
+                //no battery, just schedule next and return
+                setNextGetBidAlarm();
                 return;
             }
 
-
-
-
             if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_EXPIRED)) {
+                // Next time.
+                setNextGetBidAlarm();
+                return;
             } else if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_DISMISSED)) {
+                // gone, do nothing until next time!
+                setNextGetBidAlarm();
+                return;
             } else if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_ANSWERED)) {
+                Toast.makeText(getBaseContext(), "Got a bid: " + ans, Toast.LENGTH_LONG).show();
+                Log.d(MYTAG, "Got a bid: " + ans);
+
+                flushData(); //send it to a server! Boom!
+
+
+
+                setNextGetBidAlarm(); // cya next time.
 
             }
         }
