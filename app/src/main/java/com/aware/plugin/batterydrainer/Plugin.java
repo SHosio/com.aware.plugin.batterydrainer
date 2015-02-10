@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.aware.Aware;
 import com.aware.Aware_Preferences;
 import com.aware.ESM;
+import com.aware.providers.Aware_Provider;
 import com.aware.utils.Aware_Plugin;
 import com.aware.providers.ESM_Provider.*;
 
@@ -55,10 +56,18 @@ public class Plugin extends Aware_Plugin {
 
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
+        if (getUserId() == null){
+            String awareUID = Aware.getSetting(this, Aware_Preferences.DEVICE_ID);
+            storeUserId(awareUID);
+        }
+
+
         getDebugBidNow();
         setNextGetBidAlarm();
 
         //aware sync? get battery level, if below 10 do not bid
+        Toast.makeText(getBaseContext(), "Starting Battery Drainer Game!", Toast.LENGTH_LONG).show();
+
 
     }
 
@@ -78,6 +87,21 @@ public class Plugin extends Aware_Plugin {
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
     }
 
+    private void storeUserId(String id) {
+        Log.d(MYTAG, "Stored UID: " + id);
+        SharedPreferences settings = getSharedPreferences(BD_PREFS, MODE_PRIVATE);
+        SharedPreferences.Editor prefEditor = settings.edit();
+        prefEditor.putString(USER_UID, id);
+        prefEditor.apply();
+    }
+
+    private String getUserId() {
+        String uid = null;
+        SharedPreferences settings = getSharedPreferences(BD_PREFS, MODE_PRIVATE);
+        uid = settings.getString(USER_UID, null);
+        return uid;
+    }
+
     public void setNextGetBidAlarm() {
 
 
@@ -88,9 +112,9 @@ public class Plugin extends Aware_Plugin {
 
 
         if (hourToTrigger <= 9) {
-            // Someone signing up for the study before 9am or at e.g. 0930, should not happen in any other condition. Schedule for 0955 today
+            // Someone signing up for the study before 9am or at e.g. 0930, should not happen in any other condition. Schedule for 0950 today
             cal.set(Calendar.HOUR_OF_DAY, 9);
-            cal.set(Calendar.MINUTE, 55);
+            cal.set(Calendar.MINUTE, 50);
             cal.set(Calendar.SECOND, 00);
             nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
@@ -99,30 +123,36 @@ public class Plugin extends Aware_Plugin {
         } else if (hourToTrigger > 21) {
             setNextMorningBidAlarm();
         } else {
-            // Let's get a bid one hour from now... e.g. if it's 14:55, we'll pop up at 15:55!
-            // Note, also 21:55 it'll schedule it 22:55..but will do nothing as the step above will catch it in one hour from now
+            // Let's get a bid one hour from now... e.g. if it's 14:50, we'll pop up at 15:50!
+            // Note, also 21:50 it'll schedule it 22:50..but will do nothing as the step above will catch it in one hour from now
             hourToTrigger++;
             cal.set(Calendar.HOUR_OF_DAY, hourToTrigger);
-            cal.set(Calendar.MINUTE, 55);
+            cal.set(Calendar.MINUTE, 50);
             cal.set(Calendar.SECOND, 00);
             nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
             alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
             Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
         }
+    }
 
+    public void getBidNow (){
+        Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
+        String esmJSON = AlarmReceiver.BIDJSON;
+        queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
+        sendBroadcast(queue_esm);
     }
 
     /**
-     * Set the alarm for next morning, 09:55. This is called _every time_ when battery is under 10%,
+     * Set the alarm for next morning, 09:50. This is called _every time_ when battery is under 10%,
      * as the user cannot possibly bid during that day anymore... So next morning it is!
      */
     private void setNextMorningBidAlarm() {
         Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-        // Good night, schedule the next one for next morning 9:55 here!
+        // Good night, schedule the next one for next morning 9:50 here!
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, 1);
         cal.set(Calendar.HOUR_OF_DAY, 9);
-        cal.set(Calendar.MINUTE, 55);
+        cal.set(Calendar.MINUTE, 50);
         cal.set(Calendar.SECOND, 00);
         nextBidIntent = PendingIntent.getBroadcast(getApplicationContext(), NEXTBIDRC, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextBidIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
@@ -185,8 +215,16 @@ public class Plugin extends Aware_Plugin {
                 return;
             } else if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_ANSWERED)) {
                 Toast.makeText(getBaseContext(), "Got a bid: " + ans, Toast.LENGTH_LONG).show();
-                Log.d(MYTAG, "Got a bid: " + ans);
 
+
+                try {
+                    Double.parseDouble(ans);
+                } catch (NumberFormatException e) {
+                    getBidNow();
+                    return;
+                }
+
+                Log.d(MYTAG, "Got a bid: " + ans);
                 flushData(); //send it to a server! Boom!
                 setNextGetBidAlarm(); // cya next time.
 

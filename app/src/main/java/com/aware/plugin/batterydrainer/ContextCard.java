@@ -4,7 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import com.aware.plugin.template.R;
+import com.aware.plugin.batterydrainer.R;
 import com.aware.utils.IContextCard;
 
 public class ContextCard implements IContextCard {

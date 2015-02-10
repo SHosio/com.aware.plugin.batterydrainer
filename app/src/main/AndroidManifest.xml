@@ -1,9 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.aware.plugin.template">
+    package="com.aware.plugin.batterydrainer">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <application android:allowBackup="true" android:label="@string/app_name"
+    <application android:allowBackup="true" android:label="@string/app_name" android:sharedUserId="com.aware.plugin.batterydrainer"
         android:icon="@drawable/ic_launcher">
 
         <service android:name="com.aware.plugin.batterydrainer.Plugin" android:exported="true" />

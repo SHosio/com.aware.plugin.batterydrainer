@@ -12,21 +12,21 @@ import com.aware.providers.Battery_Provider;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
-    private final String BIDJSON = "[{'esm':{" +
+    public static final String BIDJSON = "[{'esm':{" +
             "'esm_type':" + ESM.TYPE_ESM_TEXT + "," +
             "'esm_title': 'Bid now!'," +
-            "'esm_instructions': 'How much should we pay you for 10% (units) of your battery life!'," +
+            "'esm_instructions': 'How many EUROs should we pay you for 10% (units) of your battery life? Use DOT as the currency separator!'," +
             "'esm_submit': 'Bid!'," +
-            "'esm_expiration_threashold': 60," + //the user has 20 minutes to respond. Set to 0 to disable
+            "'esm_expiration_threashold': 300," + //the user has 20 minutes to respond. Set to 0 to disable
             "'esm_trigger': 'com.aware.plugin.batterydrainer.getbid'" +
             "}}]";
 
-    private final String CANNOTBIDJSON = "[{'esm': {" +
+    public static final String CANNOTBIDJSON = "[{'esm': {" +
             "'esm_type': 5," +
             "'esm_title': 'Not enough battery left'," +
             "'esm_instructions': 'Cannot bid if you don't have at least 10% battery left...'," +
             "'esm_quick_answers': ['OK, got it!']," +
-            "'esm_expiration_threashold': 60," +
+            "'esm_expiration_threashold': 300," +
             "'esm_trigger': 'com.aware.plugin.batterydrainer.nobattery'" +
             "}}]";
 
