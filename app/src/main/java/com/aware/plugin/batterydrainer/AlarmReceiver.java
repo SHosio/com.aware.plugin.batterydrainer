@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import com.aware.ESM;
 import com.aware.providers.Battery_Provider;
 
+
 public class AlarmReceiver extends BroadcastReceiver {
 
     private final String BIDJSON = "[{'esm':{" +
@@ -26,7 +27,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             "'esm_instructions': 'Cannot bid if you don't have at least 10% battery left...'," +
             "'esm_quick_answers': ['OK, got it!']," +
             "'esm_expiration_threashold': 60," +
-            "'esm_trigger': 'com.aware.plugin.batterydrainer.nobid'" +
+            "'esm_trigger': 'com.aware.plugin.batterydrainer.nobattery'" +
             "}}]";
 
     private final String MYTAG = "BATTERYDRAINER";
@@ -38,13 +39,11 @@ public class AlarmReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (getBatteryLevel(context) < 10) {
-            String extra = intent.getStringExtra("extra");
             Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
             String esmJSON = CANNOTBIDJSON;
             queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
             context.sendBroadcast(queue_esm);
         } else {
-            String extra = intent.getStringExtra("extra");
             Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
             String esmJSON = BIDJSON;
             queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
