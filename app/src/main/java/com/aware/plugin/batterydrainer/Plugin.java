@@ -2,14 +2,12 @@ package com.aware.plugin.batterydrainer;
 
 import android.app.AlarmManager;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.aware.Aware;
 import com.aware.Aware_Preferences;
 import com.aware.ESM;
-import com.aware.providers.Aware_Provider;
 import com.aware.utils.Aware_Plugin;
 import com.aware.providers.ESM_Provider.*;
 
@@ -30,6 +28,7 @@ public class Plugin extends Aware_Plugin {
 
     private final String BD_PREFS = "DRAINERPLUGINPREFS";
     private final String USER_UID = "DRAINERUSERUID";
+
     private ESMStatusListener esm_statuses;
 
     private AlarmManager alarmManager;
@@ -56,10 +55,10 @@ public class Plugin extends Aware_Plugin {
 
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
-        if (getUserId() == null){
+        /*if (getUserId() == null){
             String awareUID = Aware.getSetting(this, Aware_Preferences.DEVICE_ID);
             storeUserId(awareUID);
-        }
+        }*/
 
 
         getDebugBidNow();
@@ -87,20 +86,22 @@ public class Plugin extends Aware_Plugin {
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
     }
 
-    private void storeUserId(String id) {
-        Log.d(MYTAG, "Stored UID: " + id);
-        SharedPreferences settings = getSharedPreferences(BD_PREFS, MODE_PRIVATE);
+    /*private void storeUserId(String id) {
+        SharedPreferences settings = getSharedPreferences("DRAINERPLUGINPREFS", MODE_WORLD_READABLE);
         SharedPreferences.Editor prefEditor = settings.edit();
         prefEditor.putString(USER_UID, id);
-        prefEditor.apply();
+        prefEditor.commit();
+        Log.d(MYTAG, "Stored UID: " + id);
+
     }
 
     private String getUserId() {
         String uid = null;
-        SharedPreferences settings = getSharedPreferences(BD_PREFS, MODE_PRIVATE);
+        SharedPreferences settings = getSharedPreferences("DRAINERPLUGINPREFS", MODE_PRIVATE);
         uid = settings.getString(USER_UID, null);
+        Log.d(MYTAG, "Returning UID from sharedrefs:" + uid);
         return uid;
-    }
+    }*/
 
     public void setNextGetBidAlarm() {
 
@@ -109,10 +110,11 @@ public class Plugin extends Aware_Plugin {
 
         Calendar cal = Calendar.getInstance();
         int hourToTrigger = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
+        int minuteNow = cal.get(Calendar.MINUTE);
 
 
-        if (hourToTrigger <= 9) {
-            // Someone signing up for the study before 9am or at e.g. 0930, should not happen in any other condition. Schedule for 0950 today
+        if (hourToTrigger <= 9 && minuteNow < 45) {
+            // Someone signing up for the study before 9:45am or at e.g. 0930, should not happen in any other condition. Schedule for 0950 today
             cal.set(Calendar.HOUR_OF_DAY, 9);
             cal.set(Calendar.MINUTE, 50);
             cal.set(Calendar.SECOND, 00);
