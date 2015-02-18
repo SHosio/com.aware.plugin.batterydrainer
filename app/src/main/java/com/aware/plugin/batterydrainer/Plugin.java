@@ -114,7 +114,7 @@ public class Plugin extends Aware_Plugin {
 
 
         if (hourToTrigger <= 9 && minuteNow < 45) {
-            // Someone signing up for the study before 9:45am or at e.g. 0930, should not happen in any other condition. Schedule for 0950 today
+            // Someone signing up for the study before 9:45am, e.g. 0930, should not happen in any other condition. Schedule for 0950 today
             cal.set(Calendar.HOUR_OF_DAY, 9);
             cal.set(Calendar.MINUTE, 50);
             cal.set(Calendar.SECOND, 00);

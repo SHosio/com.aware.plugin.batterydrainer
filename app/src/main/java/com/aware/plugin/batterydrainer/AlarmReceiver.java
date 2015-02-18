@@ -15,7 +15,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     public static final String BIDJSON = "[{'esm':{" +
             "'esm_type':" + ESM.TYPE_ESM_TEXT + "," +
             "'esm_title': 'Bid now!'," +
-            "'esm_instructions': 'How many EUROs should we pay you for 10% (units) of your battery life? Use DOT as the currency separator!'," +
+            "'esm_instructions': 'How much money should we pay you for 10% units of your battery? Use X.XX format to enter the amount in EUR.'," +
             "'esm_submit': 'Bid!'," +
             "'esm_expiration_threashold': 300," + //the user has 20 minutes to respond. Set to 0 to disable
             "'esm_trigger': 'com.aware.plugin.batterydrainer.getbid'" +
