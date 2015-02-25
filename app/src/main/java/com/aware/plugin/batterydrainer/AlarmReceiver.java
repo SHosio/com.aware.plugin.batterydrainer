@@ -38,12 +38,14 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
         if (getBatteryLevel(context) < 10) {
             Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
             String esmJSON = CANNOTBIDJSON;
             queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
             context.sendBroadcast(queue_esm);
         } else {
+            Log.d(MYTAG, "ALARM RECEIVED! SENDING!");
             Intent queue_esm = new Intent(ESM.ACTION_AWARE_QUEUE_ESM);
             String esmJSON = BIDJSON;
             queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
