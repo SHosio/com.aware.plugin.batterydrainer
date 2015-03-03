@@ -3,6 +3,9 @@ package com.aware.plugin.batterydrainer;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.util.Log;
 import android.content.BroadcastReceiver;
 
@@ -17,7 +20,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             "'esm_title': 'Bid now!'," +
             "'esm_instructions': 'How much money should we pay you for 10% units of your battery? Use X.XX format to enter the amount in EUR.'," +
             "'esm_submit': 'Bid!'," +
-            "'esm_expiration_threashold': 300," + //the user has 20 minutes to respond. Set to 0 to disable
+            "'esm_expiration_threashold': 600," + //the user has 20 minutes to respond. Set to 0 to disable
             "'esm_trigger': 'com.aware.plugin.batterydrainer.getbid'" +
             "}}]";
 
@@ -26,7 +29,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             "'esm_title': 'Not enough battery left'," +
             "'esm_instructions': 'Cannot bid if you don't have at least 10% battery left...'," +
             "'esm_quick_answers': ['OK, got it!']," +
-            "'esm_expiration_threashold': 300," +
+            "'esm_expiration_threashold': 600," +
             "'esm_trigger': 'com.aware.plugin.batterydrainer.nobattery'" +
             "}}]";
 
@@ -50,6 +53,7 @@ public class AlarmReceiver extends BroadcastReceiver {
             String esmJSON = BIDJSON;
             queue_esm.putExtra(ESM.EXTRA_ESM, esmJSON);
             context.sendBroadcast(queue_esm);
+            playNotification(context);
         }
 
     }
@@ -65,5 +69,15 @@ public class AlarmReceiver extends BroadcastReceiver {
             batteryData.close();
         }
         return Integer.parseInt(batteryLevel);
+    }
+
+    private void playNotification(Context c) {
+        try {
+            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            Ringtone r = RingtoneManager.getRingtone(c, notification);
+            r.play();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

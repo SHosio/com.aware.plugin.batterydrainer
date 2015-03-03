@@ -2,6 +2,9 @@ package com.aware.plugin.batterydrainer;
 
 import android.app.AlarmManager;
 import android.content.IntentFilter;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -61,9 +64,8 @@ public class Plugin extends Aware_Plugin {
         //aware sync? get battery level, if below 10 do not bid
         Toast.makeText(getBaseContext(), "Starting Battery Drainer Game!", Toast.LENGTH_LONG).show();
 
-
-
     }
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -98,12 +100,12 @@ public class Plugin extends Aware_Plugin {
 
 
     //this will be called many times just to be sure.... so this is why it's important to make it work at all times
+    //does not work 7:58!
     public void setNextGetBidAlarm() {
         Calendar cal = Calendar.getInstance();
         int hourNow = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
         int minuteNow = cal.get(Calendar.MINUTE);
-
-        if (hourNow <= 9 && minuteNow < 50) {
+        if (hourNow < 9 || (hourNow == 9 && minuteNow < 50)) {
             scheduleForThisMorning();
             return;
         } else if ((hourNow == 21 && minuteNow > 50) || hourNow > 21 ) {
