@@ -130,9 +130,9 @@ public class Plugin extends Aware_Plugin {
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextPendingIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
-        Date readable = new Date(cal.getTimeInMillis());
-        Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
+        //SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
+        //Date readable = new Date(cal.getTimeInMillis());
+        //Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
     }
 
     private void scheduleForThisHour() {
@@ -144,9 +144,9 @@ public class Plugin extends Aware_Plugin {
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextPendingIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
-        Date readable = new Date(cal.getTimeInMillis());
-        Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
+        //SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
+        //Date readable = new Date(cal.getTimeInMillis());
+        //Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
     }
 
     private void scheduleForNextHour() {
@@ -161,9 +161,9 @@ public class Plugin extends Aware_Plugin {
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextPendingIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
-        Date readable = new Date(cal.getTimeInMillis());
-        Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
+        //SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
+        //Date readable = new Date(cal.getTimeInMillis());
+        //Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
     }
 
     /**
@@ -184,9 +184,9 @@ public class Plugin extends Aware_Plugin {
         alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), nextPendingIntent); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
         Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
-        Date readable = new Date(cal.getTimeInMillis());
-        Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
+        //SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
+        //Date readable = new Date(cal.getTimeInMillis());
+        //Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
     }
 
 
@@ -234,6 +234,7 @@ public class Plugin extends Aware_Plugin {
                 //no battery, just schedule next and return
                 Log.d(MYTAG, "NOT ENOUGH BATTERY, just scheduling next morning next time!");
                 scheduleForNextMorning();
+                Toast.makeText(getBaseContext(), "You don't have enough battery left to bid.", Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -246,7 +247,7 @@ public class Plugin extends Aware_Plugin {
                 setNextGetBidAlarm();
                 return;
             } else if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_ANSWERED)) {
-                Toast.makeText(getBaseContext(), "Got a bid: " + ans, Toast.LENGTH_LONG).show();
+                Toast.makeText(getBaseContext(), "Your bid was: " + ans + "EUR. Good luck!", Toast.LENGTH_LONG).show();
                 try {
                     Double.parseDouble(ans);
                 } catch (NumberFormatException e) {
