@@ -9,7 +9,7 @@ android {
         applicationId "com.aware.plugin.batterydrainer"
         minSdkVersion 10
         targetSdkVersion 21
-        versionCode 1
+        versionCode 3
         versionName "1.0"
     }
     buildTypes {

@@ -5,13 +5,16 @@ import android.content.IntentFilter;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.aware.Aware;
+import com.aware.Aware_Preferences;
 import com.aware.ESM;
 import com.aware.utils.Aware_Plugin;
 import com.aware.providers.ESM_Provider.*;
+import com.aware.utils.Http;
 
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -21,9 +24,27 @@ import android.content.Intent;
 import android.database.Cursor;
 
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+
+import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 
 public class Plugin extends Aware_Plugin {
@@ -32,6 +53,8 @@ public class Plugin extends Aware_Plugin {
 
     private final String BD_PREFS = "DRAINERPLUGINPREFS";
     private final String USER_UID = "DRAINERUSERUID";
+
+    private String devId = "";
 
     private ESMStatusListener esm_statuses;
 
@@ -63,6 +86,9 @@ public class Plugin extends Aware_Plugin {
 
         //aware sync? get battery level, if below 10 do not bid
         Toast.makeText(getBaseContext(), "Starting Battery Drainer Game!", Toast.LENGTH_LONG).show();
+
+        devId = Aware.getSetting(this, Aware_Preferences.DEVICE_ID);
+        //debugBidNextMin();
 
     }
 
@@ -100,7 +126,7 @@ public class Plugin extends Aware_Plugin {
 
 
     //this will be called many times just to be sure.... so this is why it's important to make it work at all times
-    //does not work 7:58!
+
     public void setNextGetBidAlarm() {
         Calendar cal = Calendar.getInstance();
         int hourNow = cal.get(Calendar.HOUR_OF_DAY); //can be from 0 to 23
@@ -118,6 +144,19 @@ public class Plugin extends Aware_Plugin {
         } else if (minuteNow > 50) {
             scheduleForNextHour();
         }
+    }
+
+    private void debugBidNextMin() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, 1);
+        Intent randI = new Intent(this, AlarmReceiver.class);
+        PendingIntent randP = PendingIntent.getBroadcast(getApplicationContext(), 666247365, randI, PendingIntent.FLAG_ONE_SHOT);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), randP); //use WEEKLY_INTENT_RC, so this gets overwritten in case we call this one twice...
+        //Log.d(MYTAG, "Set get next bid alarm for :" + cal.getTimeInMillis());
+
+        //SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm:ss");
+        //Date readable = new Date(cal.getTimeInMillis());
+        //Toast.makeText(getBaseContext(), sdf.format(readable), Toast.LENGTH_LONG).show();
     }
 
     private void scheduleForThisMorning() {
@@ -207,6 +246,49 @@ public class Plugin extends Aware_Plugin {
     }
 
 
+
+    private class PostBidAsync extends AsyncTask<String, String, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            String device_id = params[0];
+            String esm_user_answer = params[1];
+            String double_esm_user_answer_timestamp = params[2];
+
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpPost httppost = new HttpPost("http://www.awareframework.com/api/battery/esms2.php");
+
+
+            try {
+                // Add your data
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(3);
+                nameValuePairs.add(new BasicNameValuePair("device_id", device_id));
+                nameValuePairs.add(new BasicNameValuePair("esm_user_answer", esm_user_answer));
+                nameValuePairs.add(new BasicNameValuePair("double_esm_user_answer_timestamp", double_esm_user_answer_timestamp));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                // Execute HTTP Post Request
+                HttpResponse response = httpclient.execute(httppost);
+
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return "";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Log.d(MYTAG, result);
+
+        }
+
+    }
+
+
     public class ESMStatusListener extends BroadcastReceiver {
         private final String MYTAG = "BACKPAINV2";
 
@@ -247,7 +329,6 @@ public class Plugin extends Aware_Plugin {
                 setNextGetBidAlarm();
                 return;
             } else if (intent.getAction().equals(ESM.ACTION_AWARE_ESM_ANSWERED)) {
-                Toast.makeText(getBaseContext(), "Your bid was: " + ans + "EUR. Good luck!", Toast.LENGTH_LONG).show();
                 try {
                     Double.parseDouble(ans);
                 } catch (NumberFormatException e) {
@@ -255,9 +336,18 @@ public class Plugin extends Aware_Plugin {
                     return;
                 }
                 Log.d(MYTAG, "Got a bid: " + ans);
+                Toast.makeText(getBaseContext(), "Your bid was: " + ans + "EUR. Good luck!", Toast.LENGTH_LONG).show();
+
+
+                PostBidAsync posted=new PostBidAsync();
+                posted.execute(devId, ans, Long.toString(System.currentTimeMillis()));
+
+
+
                 handleGotBid();
             }
         }
+
     }
 
 
